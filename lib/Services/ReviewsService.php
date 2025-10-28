@@ -106,8 +106,7 @@ class ReviewsService
 
     public function add(array $form, array $files)
     {
-        /** @var CreatorContract */
-        $creator = ServiceLocator::getInstance()->get(CreatorContract::class);
+        $creator = service(CreatorContract::class);
         return $creator->create($form, $files, $this->componentParams);
     }
 

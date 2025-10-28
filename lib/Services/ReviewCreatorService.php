@@ -60,8 +60,7 @@ class ReviewCreatorService implements CreatorContract
     {
         $result = ['ids' => [], 'preview' => []];
         if (!empty($files)) {
-            /** @var FileUploaderContract  */
-            $uploader = ServiceLocator::getInstance()->get(FileUploaderContract::class);
+            $uploader = service(FileUploaderContract::class);
             $result = $uploader->upload($files);
         }
         return $result;
