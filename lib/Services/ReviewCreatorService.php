@@ -2,8 +2,7 @@
 
 namespace Beeralex\Reviews\Services;
 
-use Bitrix\Main\DI\ServiceLocator;
-use Beeralex\Core\Helpers\IblockHelper;
+use Beeralex\Core\Service\IblockService;
 use Beeralex\Reviews\ComponentParams;
 use Beeralex\Reviews\Contracts\CreatorContract;
 use Beeralex\Reviews\Contracts\FileUploaderContract;
@@ -16,7 +15,7 @@ class ReviewCreatorService implements CreatorContract
 
     public function __construct()
     {
-        $this->options = Options::getInstance();
+        $this->options = service(Options::class);
         \Bitrix\Main\Loader::includeModule('iblock');
     }
 
@@ -122,7 +121,7 @@ class ReviewCreatorService implements CreatorContract
 
     protected function getPlatformId(Platforms $platform): int
     {
-        $propId = IblockHelper::getIblockPropIdByCode('REVIEW_PLATFORM', $this->options->reviewsIblockId);
-        return IblockHelper::getEnumValues($propId, [$platform->value])[$platform->value]['id'];
+        $propId = service(IblockService::class)->getIblockPropIdByCode('REVIEW_PLATFORM', $this->options->reviewsIblockId);
+        return service(IblockService::class)->getEnumValues($propId, [$platform->value])[$platform->value]['id'];
     }
 }

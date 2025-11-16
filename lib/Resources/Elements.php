@@ -5,7 +5,7 @@ namespace Beeralex\Reviews\Resources;
 use Bitrix\Iblock\Iblock;
 use Exception;
 use Beeralex\Core\Http\Resources\Resource;
-use Beeralex\Core\Helpers\DateHelper;
+use Beeralex\Reviews\DateHelper;
 use Beeralex\Reviews\Models\ReviewsTable;
 use Beeralex\Reviews\Options;
 use Illuminate\Support\Collection;
@@ -61,7 +61,7 @@ class Elements extends Resource
 
     protected function getInfoByProducts(array $productIds)
     {
-        $options = Options::getInstance();
+        $options = service(Options::class);
         $catalogApi = Iblock::wakeUp($options->catalogIblockId)->getEntityDataClass();
         if(!$catalogApi) throw new Exception("Не заполнен символьный код API инфоблока каталог товаров");
         $result = new Collection($catalogApi::query()

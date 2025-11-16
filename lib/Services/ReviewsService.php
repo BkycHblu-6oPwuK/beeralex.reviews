@@ -1,9 +1,7 @@
 <?php
-
 namespace Beeralex\Reviews\Services;
 
-use Bitrix\Main\DI\ServiceLocator;
-use Beeralex\Core\Helpers\PaginationHelper;
+use Beeralex\Core\Service\PaginationService;
 use Beeralex\Reviews\ComponentParams;
 use Beeralex\Reviews\Contracts\CreatorContract;
 use Beeralex\Reviews\EvalHelper;
@@ -17,7 +15,7 @@ class ReviewsService
 
     public function __construct(ComponentParams $componentParams)
     {
-        $this->options = Options::getInstance();
+        $this->options = service(Options::class);
         $this->componentParams = $componentParams;
     }
 
@@ -81,7 +79,7 @@ class ReviewsService
             'currentPage' => $current,
             'limit' => $this->componentParams->paginationLimit,
             'pageCount' => $count,
-            'pages' => PaginationHelper::getPages($current, $count),
+            'pages' => service(PaginationService::class)->getPages($current, $count),
         ];
     }
 

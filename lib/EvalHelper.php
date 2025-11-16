@@ -1,7 +1,7 @@
 <?php
 namespace Beeralex\Reviews;
 
-use Beeralex\Core\Helpers\LanguageHelper;
+use Beeralex\Core\Service\LanguageService;
 use Beeralex\Reviews\Models\ReviewsTable;
 
 class EvalHelper 
@@ -70,7 +70,7 @@ class EvalHelper
 
     public static function countReviewsFormatted(int $count): string
     {
-        $text = LanguageHelper::getPlural($count, ['отзыва', 'отзыва', 'отзывов']);
+        $text = service(LanguageService::class)->getPlural($count, ['отзыва', 'отзыва', 'отзывов']);
         return "$count $text";
     }
 }

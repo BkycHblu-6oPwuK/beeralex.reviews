@@ -5,6 +5,9 @@ namespace Beeralex\Reviews\Import;
 use Bitrix\Main\Web\HttpClient;
 use Beeralex\Reviews\Enum\Platforms;
 
+/**
+ * @deprecated
+ */
 class ImportFrom2Gis extends BaseImport
 {
     protected array $branches;

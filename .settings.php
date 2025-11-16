@@ -1,6 +1,6 @@
 <?php
 
-use Beeralex\Reviews\ComponentParams;
+use Beeralex\Reviews\Options;
 
 return [
 	'controllers' => [
@@ -11,12 +11,8 @@ return [
 	],
 	'services' => [
 		'value' => [
-			\Beeralex\Reviews\Import\ImportFrom2Gis::class => [
-				'className' => \Beeralex\Reviews\Import\ImportFrom2Gis::class,
-				'constructorParams' => static function (){
-					$options = \Beeralex\Reviews\Options::getInstance();
-					return [new \Beeralex\Reviews\Services\ReviewsService(new ComponentParams()), $options->twoGisBranches, $options->twoGisKey];
-				}
+			Options::class => [
+				'className' => Options::class,
 			],
 			\Beeralex\Reviews\Contracts\CreatorContract::class => [
 				'className' => Beeralex\Reviews\Services\ReviewCreatorService::class,

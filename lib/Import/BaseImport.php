@@ -5,6 +5,9 @@ namespace Beeralex\Reviews\Import;
 use Beeralex\Reviews\Models\ReviewsTable;
 use Beeralex\Reviews\Services\ReviewsService;
 
+/**
+ * @deprecated - а лучше бы не импортировать отзывы, а написать сервис для запроса к api
+ */
 abstract class BaseImport
 {
     protected ReviewsService $service;

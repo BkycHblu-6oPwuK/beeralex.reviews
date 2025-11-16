@@ -32,7 +32,7 @@ composer require beeralex/beeralex.reviews
 Этот класс используется для получения настроек модуля и компонента, при подключении компонента в шаблоне можно получить объект класса с помощью метода:
 
 ```php
-Beeralex\Reviews\Options::getInstance();
+service(Options::class)
 ```
 
 Объект класса вернется если он уже был создан, иначе null

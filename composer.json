@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "beeralex/beeralex.core": "~1.0",
+        "beeralex/beeralex.core": "~1.1",
         "php-ffmpeg/php-ffmpeg": "^1.2",
         "illuminate/collections": "^11.29"
     },
