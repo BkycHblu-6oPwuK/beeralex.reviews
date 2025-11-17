@@ -9,7 +9,6 @@ use Beeralex\Reviews\DateHelper;
 use Beeralex\Reviews\Models\ReviewsTable;
 use Beeralex\Reviews\Options;
 use Illuminate\Support\Collection;
-use Beeralex\Reviews\Enum\Platforms;
 
 class Elements extends Resource
 {
@@ -46,7 +45,6 @@ class Elements extends Resource
                 'files' => $files[$item['ID']] ? $files[$item['ID']] : [],
                 'review' => $review,
                 'store_response' => $store_response,
-                'platform' => Platforms::tryFrom($item['REVIEW_PLATFORM_VALUE'] ?? '')?->value ?? Platforms::SITE->value,
             ];
 
             if($item['PRODUCT_VALUE']){

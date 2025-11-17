@@ -98,7 +98,7 @@ class ReviewsTable extends ElementProductReviewsApiTable
         return !empty($element['ID']);
     }
 
-    public static function getElements(int $productId, array $sorting, array $pagination, bool $getInfoByProduct, string $platform = '') : array
+    public static function getElements(int $productId, array $sorting, array $pagination, bool $getInfoByProduct) : array
     {
         $nav = new \Bitrix\Main\UI\PageNavigation("nav-reviews");
         $nav->allowAllRecords(true)
@@ -119,14 +119,10 @@ class ReviewsTable extends ElementProductReviewsApiTable
             'EVAL_VALUE' => 'EVAL.VALUE',
             'REVIEW_VALUE' => 'REVIEW.VALUE',
             'STORE_RESPONSE_VALUE' => 'STORE_RESPONSE.VALUE',
-            'REVIEW_PLATFORM_VALUE' => 'REVIEW_PLATFORM.ITEM.XML_ID'
         ];
 
         if ($getInfoByProduct) {
             $select = array_merge($select, ['PRODUCT_VALUE' => 'PRODUCT.VALUE']);
-        }
-        if ($platform) {
-            $elements->where('REVIEW_PLATFORM.ITEM.XML_ID', $platform);
         }
 
         $elements = $elements->where('ACTIVE', 'Y')
@@ -148,15 +144,15 @@ class ReviewsTable extends ElementProductReviewsApiTable
         return FilesForElements::make(compact('elements'))->toArray();
     }
 
-    public static function reviewIsExistsByExternalIdAndPlatform(string $externalId, string $platform) : bool
-    {
-        $element = self::query()
-            ->setSelect(['ID'])
-            ->where('EXTERNAL_ID.VALUE', $externalId)
-            ->where('REVIEW_PLATFORM.ITEM.XML_ID', $platform)
-            ->exec()
-            ->fetch();
+    // public static function reviewIsExistsByExternalIdAndPlatform(string $externalId, string $platform) : bool
+    // {
+    //     $element = self::query()
+    //         ->setSelect(['ID'])
+    //         ->where('EXTERNAL_ID.VALUE', $externalId)
+    //         ->where('REVIEW_PLATFORM.ITEM.XML_ID', $platform)
+    //         ->exec()
+    //         ->fetch();
 
-        return !empty($element['ID']);
-    }
+    //     return !empty($element['ID']);
+    // }
 }

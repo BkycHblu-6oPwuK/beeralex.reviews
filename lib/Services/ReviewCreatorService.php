@@ -2,11 +2,9 @@
 
 namespace Beeralex\Reviews\Services;
 
-use Beeralex\Core\Service\IblockService;
 use Beeralex\Reviews\ComponentParams;
 use Beeralex\Reviews\Contracts\CreatorContract;
 use Beeralex\Reviews\Contracts\FileUploaderContract;
-use Beeralex\Reviews\Enum\Platforms;
 use Beeralex\Reviews\Options;
 
 class ReviewCreatorService implements CreatorContract
@@ -27,7 +25,7 @@ class ReviewCreatorService implements CreatorContract
         $uploadResult = $this->handleFiles($files);
 
         $properties = $this->buildProperties($form, $uploadResult, $USER, $params);
-        $name = $this->buildName($form, $properties, $params);
+        $name = $this->buildName($properties, $params);
 
         $elementData = [
             'IBLOCK_ID' => $this->options->reviewsIblockId,
@@ -67,9 +65,7 @@ class ReviewCreatorService implements CreatorContract
 
     protected function buildProperties(array $form, array $uploadResult, $USER, ComponentParams $params): array
     {
-        $platform = Platforms::tryFrom($form['platform'] ?? '') ?? Platforms::SITE;
         $isAuth = $USER?->IsAuthorized() ?? false;
-        $isSitePlatform = ($platform === Platforms::SITE);
         $userId = $isAuth ? $USER->GetID() : null;
         $properties = [
             'PRODUCT' => $params->productId,
@@ -79,19 +75,15 @@ class ReviewCreatorService implements CreatorContract
             'OFFER' => $form['offer'],
             'CONTACT_DETAILS' => $form['contact'],
             'STORE_RESPONSE' => $form['answer'] ?? '',
-            'REVIEW_PLATFORM' => $this->getPlatformId($platform),
-            'EXTERNAL_ID' => $form['external_id'] ?? '',
         ];
 
         if (!empty($form['user_name'])) {
             $properties['USER_NAME'] = $form['user_name'];
-        } elseif ($isSitePlatform && $isAuth) {
-            $properties['USER_NAME'] = $this->formatUserName($USER);
         } else {
             $properties['USER_NAME'] = 'Аноним';
         }
 
-        if ($isSitePlatform && $isAuth) {
+        if ($isAuth) {
             $properties['USER'] = $userId;
         }
 
@@ -105,23 +97,13 @@ class ReviewCreatorService implements CreatorContract
         return trim($USER?->GetFirstName() ?? '' . ' ' . $initial);
     }
 
-    protected function buildName(array $form, array $properties, ComponentParams $params): string
+    protected function buildName(array $properties, ComponentParams $params): string
     {
-        if (($form['platform'] ?? '') === Platforms::TWO_GIS->value) {
-            return 'Отзыв c 2гис - ' . ($form['user_name'] ?? 'Неизвестный');
-        }
-
         $productId = $params->productId;
         if ($productId) {
             return 'Отзыв на товар - ' . $productId;
         }
 
         return 'Отзыв без товара от - ' . $properties['USER_NAME'];
-    }
-
-    protected function getPlatformId(Platforms $platform): int
-    {
-        $propId = service(IblockService::class)->getIblockPropIdByCode('REVIEW_PLATFORM', $this->options->reviewsIblockId);
-        return service(IblockService::class)->getEnumValues($propId, [$platform->value])[$platform->value]['id'];
     }
 }

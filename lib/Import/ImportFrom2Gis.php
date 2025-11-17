@@ -3,7 +3,6 @@
 namespace Beeralex\Reviews\Import;
 
 use Bitrix\Main\Web\HttpClient;
-use Beeralex\Reviews\Enum\Platforms;
 
 /**
  * @deprecated
@@ -52,11 +51,11 @@ class ImportFrom2Gis extends BaseImport
                             'eval' => $rating,
                             'review' => $review['text'] ?? '',
                             'user_name' => $review['user']['name'] ?? 'Аноним',
-                            'platform' => Platforms::TWO_GIS->value,
+                            //'platform' => Platforms::TWO_GIS->value,
                             'contact' => '',
                             'active' => true,
                             'answer' => $review['official_answer'] ? $review['official_answer']['text'] : '',
-                            'external_id' => $review['id'],
+                            //'external_id' => $review['id'],
                         ],
                         'files' => $files['files'],
                         'tmp_paths' => $files['tmp_paths'],

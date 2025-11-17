@@ -2,14 +2,11 @@
 
 namespace Beeralex\Reviews;
 
-use Beeralex\Reviews\Enum\Platforms;
-
 final class ComponentParams
 {
     public int $productId = 0;
     public int $paginationLimit = 5;
     public bool $showInfoByProduct = false;
-    public string $platform = Platforms::SITE->value;
 
     public int $paginationCurrent = 1;
     public float $paginationPageCount = 0;
@@ -24,11 +21,6 @@ final class ComponentParams
         $this->productId         = (int)($params['PRODUCT_ID'] ?? 0);
         $this->paginationLimit   = (int)($params['PAGINATION_LIMIT'] ?? 5);
         $this->showInfoByProduct = (bool)($params['SHOW_INFO_PRODUCT'] ?? false);
-        $this->platform          = Platforms::tryFrom($params['PLATFORM'] ?? '')?->value ?? Platforms::SITE->value;
-
-        if ($this->platform !== Platforms::SITE->value) {
-            $this->sortingField = 'EXTERNAL_ID.VALUE';
-        }
     }
 
     public function setProductId(int $id): self

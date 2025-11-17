@@ -68,7 +68,7 @@ class ReviewsService
 
     public function getElements(int $productId)
     {
-        return ReviewsTable::getElements($productId, $this->componentParams->getSorting(), $this->componentParams->getPagination(), $this->componentParams->showInfoByProduct, $this->componentParams->platform);
+        return ReviewsTable::getElements($productId, $this->componentParams->getSorting(), $this->componentParams->getPagination(), $this->componentParams->showInfoByProduct);
     }
 
     protected function getPagination()
