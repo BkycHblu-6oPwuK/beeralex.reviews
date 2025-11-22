@@ -2,7 +2,7 @@
 
 namespace Beeralex\Reviews\Services;
 
-use Beeralex\Core\Helpers\FilesHelper;
+use Beeralex\Core\Service\FileService;
 use Beeralex\Reviews\Contracts\FileUploaderContract;
 use Beeralex\Reviews\Options;
 
@@ -12,7 +12,7 @@ class UploadService implements FileUploaderContract
 
     public function upload(array $files): array
     {
-        $toSavefiles = FilesHelper::getFormattedToSafe($files);
+        $toSavefiles = service(FileService::class)->getFormattedToSafe($files);
         $arSaveFiles = [];
         if (!empty($toSavefiles)) {
             foreach ($toSavefiles as $file) {
