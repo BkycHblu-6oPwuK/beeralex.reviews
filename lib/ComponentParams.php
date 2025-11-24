@@ -9,7 +9,7 @@ final class ComponentParams
     public bool $showInfoByProduct = false;
 
     public int $paginationCurrent = 1;
-    public float $paginationPageCount = 0;
+    public int $paginationPageCount = 0;
     public string $sortingField = 'ID';
     public string $sortingType = 'DESC';
 
