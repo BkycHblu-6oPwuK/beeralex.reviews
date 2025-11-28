@@ -1,3 +1,6 @@
 <?php
 use Bitrix\Main\Loader;
 Loader::requireModule('beeralex.core');
+Loader::requireModule('iblock');
+
+require_once __DIR__ . '/include/functions.php';

@@ -35,17 +35,7 @@ class ReviewCreatorService implements CreatorContract
             'PROPERTY_VALUES' => $properties,
         ];
 
-        if (!empty($uploadResult['preview']['file_array'])) {
-            $elementData['PREVIEW_PICTURE'] = $uploadResult['preview']['file_array'];
-        }
-
-        $id = (new \CIBlockElement)->Add($elementData);
-
-        if (!empty($uploadResult['preview']['thumbnail_path'])) {
-            @unlink($uploadResult['preview']['thumbnail_path']);
-        }
-
-        return $id;
+        return (new \CIBlockElement)->Add($elementData);
     }
 
     protected function sanitizeEval(int $eval): int
@@ -55,7 +45,7 @@ class ReviewCreatorService implements CreatorContract
 
     protected function handleFiles(array $files): array
     {
-        $result = ['ids' => [], 'preview' => []];
+        $result = [];
         if (!empty($files)) {
             $uploader = service(FileUploaderContract::class);
             $result = $uploader->upload($files);
@@ -71,7 +61,7 @@ class ReviewCreatorService implements CreatorContract
             'PRODUCT' => $params->productId,
             'EVAL' => $form['eval'],
             'REVIEW' => $form['review'],
-            'FILES' => $uploadResult['ids'],
+            'FILES' => $uploadResult,
             'OFFER' => $form['offer'],
             'CONTACT_DETAILS' => $form['contact'],
             'STORE_RESPONSE' => $form['answer'] ?? '',

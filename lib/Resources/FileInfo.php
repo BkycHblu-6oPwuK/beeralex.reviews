@@ -14,9 +14,6 @@ class FileInfo extends Resource
             'type' => $is_video ? 'video' : 'image',
             'src' => $this->item['SRC_FILE'],
         ];
-        if ($is_video) {
-            $result['thumbail'] = $this->item['SRC_THUMBAIL'];
-        }
         return $result;
     }
 }

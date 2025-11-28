@@ -2,7 +2,7 @@
 
 namespace Beeralex\Reviews\Import;
 
-use Beeralex\Reviews\Models\ReviewsTable;
+use Beeralex\Reviews\Repository\ReviewsRepository;
 use Beeralex\Reviews\Services\ReviewsService;
 
 /**
@@ -13,10 +13,12 @@ use Beeralex\Reviews\Services\ReviewsService;
 abstract class BaseImport
 {
     protected ReviewsService $service;
+    protected ReviewsRepository $reviewsRepository;
 
     public function __construct(ReviewsService $service)
     {
         $this->service = $service;
+        $this->reviewsRepository = new ReviewsRepository();
     }
 
     public abstract function process();
@@ -26,7 +28,7 @@ abstract class BaseImport
         foreach ($items as $item) {
             try {
                 if ($item['form']['external_id'] && $item['form']['platform']) {
-                    if (ReviewsTable::reviewIsExistsByExternalIdAndPlatform($item['form']['external_id'], $item['form']['platform'])) {
+                    if ($this->reviewsRepository->reviewIsExistsByExternalIdAndPlatform($item['form']['external_id'], $item['form']['platform'])) {
                         continue;
                     }
                 }

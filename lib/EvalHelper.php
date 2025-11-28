@@ -2,10 +2,20 @@
 namespace Beeralex\Reviews;
 
 use Beeralex\Core\Service\LanguageService;
-use Beeralex\Reviews\Models\ReviewsTable;
+use Beeralex\Reviews\Repository\ReviewsRepository;
 
 class EvalHelper 
 {
+    private static ?ReviewsRepository $reviewsRepository = null;
+
+    private static function getRepository(): ReviewsRepository
+    {
+        if (self::$reviewsRepository === null) {
+            self::$reviewsRepository = new ReviewsRepository();
+        }
+        return self::$reviewsRepository;
+    }
+
     public static function getAvg(int $productId)
     {
         $reviewsEvalCollect = static::getReviewsEvalCollect($productId);
@@ -16,18 +26,17 @@ class EvalHelper
     {
         static $collect = null;
         if($collect === null){
-            $collect = collect(ReviewsTable::query()
-            ->where('PRODUCT_VALUE', $productId)
-            ->where('ACTIVE','Y')
-            ->setSelect(['PRODUCT_' => 'PRODUCT','EVAL_' =>'EVAL'])
-            ->fetchAll());
+            $collect = collect(self::getRepository()->all(
+                ['PRODUCT.VALUE' => $productId, 'ACTIVE' => 'Y'],
+                ['PRODUCT_' => 'PRODUCT','EVAL_' =>'EVAL']
+            ));
         }
         return $collect;
     }
 
     public static function getEvalInfo(int $productId)
     {
-        $allReviewsCount = ReviewsTable::getCountReviews($productId);
+        $allReviewsCount = self::getRepository()->getCountReviews($productId);
         $reviewsEvalCollect = EvalHelper::getReviewsEvalCollect($productId);
         
         $evalCounts = [

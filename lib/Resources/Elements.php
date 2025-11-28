@@ -6,7 +6,7 @@ use Bitrix\Iblock\Iblock;
 use Exception;
 use Beeralex\Core\Http\Resources\Resource;
 use Beeralex\Reviews\DateHelper;
-use Beeralex\Reviews\Models\ReviewsTable;
+use Beeralex\Reviews\Repository\ReviewsRepository;
 use Beeralex\Reviews\Options;
 use Illuminate\Support\Collection;
 
@@ -18,7 +18,8 @@ class Elements extends Resource
             'items' => []
         ];
         $elements = new Collection($this->elements);
-        $files = ReviewsTable::getFilesForElements($elements->pluck('ID')->toArray());
+        $reviewsRepository = new ReviewsRepository();
+        $files = $reviewsRepository->getFilesForElements($elements->pluck('ID')->toArray());
         $productIds = $elements->pluck('PRODUCT_VALUE')->filter(fn($item) => $item != 0)->toArray();
         $productsInfo = [];
 

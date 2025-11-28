@@ -5,18 +5,20 @@ use Beeralex\Core\Service\PaginationService;
 use Beeralex\Reviews\ComponentParams;
 use Beeralex\Reviews\Contracts\CreatorContract;
 use Beeralex\Reviews\EvalHelper;
-use Beeralex\Reviews\Models\ReviewsTable;
+use Beeralex\Reviews\Repository\ReviewsRepository;
 use Beeralex\Reviews\Options;
 
 class ReviewsService
 {
     protected readonly Options $options;
     protected readonly ComponentParams $componentParams;
+    protected readonly ReviewsRepository $reviewsRepository;
 
     public function __construct(ComponentParams $componentParams)
     {
         $this->options = service(Options::class);
         $this->componentParams = $componentParams;
+        $this->reviewsRepository = new ReviewsRepository();
     }
 
     public function getReviews(): array
@@ -43,7 +45,6 @@ class ReviewsService
 
         $elements = $this->getElements($productId);
         $elements['isset_items'] = !empty($elements['items']);
-        $elements['actions'] = $this->getActions();
         $elements['exits_review'] = false;
         $elements['user_authorize'] = $USER?->IsAuthorized() ?? false;
         $elements['pagination'] = $this->getPagination();
@@ -52,7 +53,7 @@ class ReviewsService
         if ($withEvalAndFiles) {
             $elements['eval_info'] = EvalHelper::getEvalInfo($productId);
             $elements['files'] = $this->componentParams->showFilesByProduct
-                ? ReviewsTable::getFiles($productId, $this->componentParams->limitFiles)
+                ? $this->reviewsRepository->getFiles($productId, $this->componentParams->limitFiles)
                 : [];
         }
 
@@ -61,14 +62,14 @@ class ReviewsService
 
     protected function updatePaginationCount(int $productId): void
     {
-        $count = ReviewsTable::getCountReviews($productId);
+        $count = $this->reviewsRepository->getCountReviews($productId);
         $limit = $this->componentParams->paginationLimit;
         $this->componentParams->setPaginationPageCount(ceil($count / $limit));
     }
 
     public function getElements(int $productId)
     {
-        return ReviewsTable::getElements($productId, $this->componentParams->getSorting(), $this->componentParams->getPagination(), $this->componentParams->showInfoByProduct);
+        return $this->reviewsRepository->getElements($productId, $this->componentParams->getSorting(), $this->componentParams->getPagination(), $this->componentParams->showInfoByProduct);
     }
 
     protected function getPagination()
@@ -88,17 +89,6 @@ class ReviewsService
         return [
             'field' => $this->componentParams->sortingField,
             'type' => $this->componentParams->sortingType,
-        ];
-    }
-
-    protected function getActions()
-    {
-        $urlManager = \Bitrix\Main\Engine\UrlManager::getInstance();
-        return [
-            'pagination' => $urlManager->create('beeralex:reviews.ReviewsController.pagination'),
-            'add' => $urlManager->create('beeralex:reviews.ReviewsController.add'),
-            'sorting' => $urlManager->create('beeralex:reviews.ReviewsController.sorting'),
-            'get' => $urlManager->create('beeralex:reviews.ReviewsController.get'),
         ];
     }
 
