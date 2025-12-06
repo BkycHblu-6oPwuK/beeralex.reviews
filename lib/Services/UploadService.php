@@ -7,9 +7,14 @@ use Beeralex\Reviews\Contracts\FileUploaderContract;
 
 class UploadService implements FileUploaderContract
 {
+    public function __construct(
+        protected readonly FileService $fileService
+    )
+    {}
+
     public function upload(array $files): array
     {
-        $toSavefiles = service(FileService::class)->getFormattedToSafe($files);
+        $toSavefiles = $this->fileService->getFormattedToSafe($files);
         $arSaveFiles = [];
         if (!empty($toSavefiles)) {
             foreach ($toSavefiles as $file) {

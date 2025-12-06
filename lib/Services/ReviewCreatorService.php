@@ -2,40 +2,79 @@
 
 namespace Beeralex\Reviews\Services;
 
-use Beeralex\Reviews\ComponentParams;
 use Beeralex\Reviews\Contracts\CreatorContract;
 use Beeralex\Reviews\Contracts\FileUploaderContract;
-use Beeralex\Reviews\Options;
+use Beeralex\Reviews\Dto\ReviewDTO;
+use Beeralex\Reviews\Repository\ReviewsRepository;
+use Bitrix\Main\Error;
+use Bitrix\Main\Result;
 
 class ReviewCreatorService implements CreatorContract
 {
-    protected Options $options;
-
-    public function __construct()
+    public function __construct(
+        protected readonly FileUploaderContract $fileUploader,
+        protected readonly ReviewsRepository $repository
+    )
     {
-        $this->options = service(Options::class);
         \Bitrix\Main\Loader::includeModule('iblock');
     }
 
-    public function create(array $form, array $files, ComponentParams $params): int
+    /**
+     * Создание отзыва
+     * @param ReviewDTO $dto DTO с данными отзыва (автоматически валидируется в контроллере)
+     * @param array $files Файлы для загрузки
+     * @return int ID созданного элемента
+     * @throws \Bitrix\Main\SystemException если данные невалидны
+     */
+    public function create(ReviewDTO $dto, array $files): Result
     {
-        global $USER;
+        $result = new Result();
+        if (!$dto->isValid()) {
+            foreach ($dto->getErrors() as $error) {
+                $result->addError(new Error($error->getMessage(), 'review_create'), $error->getCustomData());
+            }
+            return $result;
+        }
 
-        $form['eval'] = $this->sanitizeEval($form['eval'] ?? 1);
-        $uploadResult = $this->handleFiles($files);
+        $elementData = $this->prepareElementData($dto);
+        $fileIds = $this->handleFiles($files);
+        
+        if (!empty($fileIds)) {
+            $elementData['PROPERTY_VALUES']['FILES'] = $fileIds;
+        }
+        $elementId = $this->repository->add($elementData);
+        $result->setData(['elementId' => $elementId]);
 
-        $properties = $this->buildProperties($form, $uploadResult, $USER, $params);
-        $name = $this->buildName($properties, $params);
+        return $result;
+    }
 
-        $elementData = [
-            'IBLOCK_ID' => $this->options->reviewsIblockId,
-            'NAME' => $name,
-            'IBLOCK_SECTION_ID' => false,
-            'ACTIVE' => $form['active'] ? 'Y' : 'N',
-            'PROPERTY_VALUES' => $properties,
+    /**
+     * Подготовка данных элемента для сохранения
+     */
+    protected function prepareElementData(ReviewDTO $dto): array
+    {
+        $properties = [
+            'USER_NAME' => $dto->userName,
+            'EVAL' => $dto->eval,
+            'REVIEW' => [
+                'TEXT' => $dto->review,
+                'TYPE' => 'HTML'
+            ],
+            'CONTACT_DETAILS' => $dto->contactDetails ?? '',
+            'ELEMENT_ID' => $dto->elementId,
         ];
 
-        return (new \CIBlockElement)->Add($elementData);
+        // Добавляем USER только если пользователь авторизован
+        if ($dto->userId) {
+            $properties['USER'] = $dto->userId;
+        }
+        
+        return [
+            'NAME' => sprintf('Отзыв от %s', $dto->userName),
+            'ACTIVE' => 'N', // Модерация
+            'IBLOCK_SECTION_ID' => $dto->elementId,
+            'PROPERTY_VALUES' => $properties
+        ];
     }
 
     protected function sanitizeEval(int $eval): int
@@ -47,53 +86,8 @@ class ReviewCreatorService implements CreatorContract
     {
         $result = [];
         if (!empty($files)) {
-            $uploader = service(FileUploaderContract::class);
-            $result = $uploader->upload($files);
+            $result = $this->fileUploader->upload($files);
         }
         return $result;
-    }
-
-    protected function buildProperties(array $form, array $uploadResult, $USER, ComponentParams $params): array
-    {
-        $isAuth = $USER?->IsAuthorized() ?? false;
-        $userId = $isAuth ? $USER->GetID() : null;
-        $properties = [
-            'PRODUCT' => $params->productId,
-            'EVAL' => $form['eval'],
-            'REVIEW' => $form['review'],
-            'FILES' => $uploadResult,
-            'OFFER' => $form['offer'],
-            'CONTACT_DETAILS' => $form['contact'],
-            'STORE_RESPONSE' => $form['answer'] ?? '',
-        ];
-
-        if (!empty($form['user_name'])) {
-            $properties['USER_NAME'] = $form['user_name'];
-        } else {
-            $properties['USER_NAME'] = 'Аноним';
-        }
-
-        if ($isAuth) {
-            $properties['USER'] = $userId;
-        }
-
-        return $properties;
-    }
-
-    protected function formatUserName($USER): string
-    {
-        $lastName = trim($USER?->GetLastName() ?? '');
-        $initial = $lastName ? mb_strtoupper(mb_substr($lastName, 0, 1)) . '.' : '';
-        return trim($USER?->GetFirstName() ?? '' . ' ' . $initial);
-    }
-
-    protected function buildName(array $properties, ComponentParams $params): string
-    {
-        $productId = $params->productId;
-        if ($productId) {
-            return 'Отзыв на товар - ' . $productId;
-        }
-
-        return 'Отзыв без товара от - ' . $properties['USER_NAME'];
     }
 }

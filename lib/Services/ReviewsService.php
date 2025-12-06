@@ -1,124 +1,24 @@
 <?php
 namespace Beeralex\Reviews\Services;
 
-use Beeralex\Core\Service\PaginationService;
-use Beeralex\Reviews\ComponentParams;
 use Beeralex\Reviews\Contracts\CreatorContract;
-use Beeralex\Reviews\EvalHelper;
-use Beeralex\Reviews\Repository\ReviewsRepository;
-use Beeralex\Reviews\Options;
+use Beeralex\Reviews\Dto\ReviewDTO;
+use Bitrix\Main\Result;
 
 class ReviewsService
 {
-    protected readonly Options $options;
-    protected readonly ComponentParams $componentParams;
-    protected readonly ReviewsRepository $reviewsRepository;
+    public function __construct(
+        protected readonly CreatorContract $creator,
+    )
+    {}
 
-    public function __construct(ComponentParams $componentParams)
+    /**
+     * Добавление отзыва
+     * @param ReviewDTO $dto DTO с данными отзыва
+     * @param array $files Файлы для загрузки
+     */
+    public function add(ReviewDTO $dto, array $files): Result
     {
-        $this->options = service(Options::class);
-        $this->componentParams = $componentParams;
-        $this->reviewsRepository = new ReviewsRepository();
-    }
-
-    public function getReviews(): array
-    {
-        $productId = $this->componentParams->productId;
-
-        $this->updatePaginationCount($productId);
-
-        if ($productId > 0) {
-            return $this->getReviewsByProduct($productId);
-        }
-
-        return $this->buildReviewsData(0, false);
-    }
-
-    public function getReviewsByProduct(int $productId): array
-    {
-        return $this->buildReviewsData($productId, true);
-    }
-
-    protected function buildReviewsData(int $productId, bool $withEvalAndFiles): array
-    {
-        global $USER;
-
-        $elements = $this->getElements($productId);
-        $elements['isset_items'] = !empty($elements['items']);
-        $elements['exits_review'] = false;
-        $elements['user_authorize'] = $USER?->IsAuthorized() ?? false;
-        $elements['pagination'] = $this->getPagination();
-        $elements['sorting'] = $this->getSorting();
-
-        if ($withEvalAndFiles) {
-            $elements['eval_info'] = EvalHelper::getEvalInfo($productId);
-            $elements['files'] = $this->componentParams->showFilesByProduct
-                ? $this->reviewsRepository->getFiles($productId, $this->componentParams->limitFiles)
-                : [];
-        }
-
-        return $elements;
-    }
-
-    protected function updatePaginationCount(int $productId): void
-    {
-        $count = $this->reviewsRepository->getCountReviews($productId);
-        $limit = $this->componentParams->paginationLimit;
-        $this->componentParams->setPaginationPageCount(ceil($count / $limit));
-    }
-
-    public function getElements(int $productId)
-    {
-        return $this->reviewsRepository->getElements($productId, $this->componentParams->getSorting(), $this->componentParams->getPagination(), $this->componentParams->showInfoByProduct);
-    }
-
-    protected function getPagination()
-    {
-        $current = $this->componentParams->paginationCurrent;
-        $count =  $this->componentParams->paginationPageCount;
-        return [
-            'currentPage' => $current,
-            'limit' => $this->componentParams->paginationLimit,
-            'pageCount' => $count,
-            'pages' => service(PaginationService::class)->getPages($current, $count),
-        ];
-    }
-
-    protected function getSorting()
-    {
-        return [
-            'field' => $this->componentParams->sortingField,
-            'type' => $this->componentParams->sortingType,
-        ];
-    }
-
-    public function add(array $form, array $files)
-    {
-        $creator = service(CreatorContract::class);
-        return $creator->create($form, $files, $this->componentParams);
-    }
-
-    public function sorting(array $sorting, array $pagination): array
-    {
-        $pagination['currentPage'] = 1;
-        return $this->loadElements($pagination, $sorting);
-    }
-
-    public function pagination(array $pagination, array $sorting): array
-    {
-        return $this->loadElements($pagination, $sorting);
-    }
-
-    public function loadElements(array $pagination, array $sorting): array
-    {
-        $this->componentParams
-            ->setPaginationCurrent($pagination['currentPage'] ?? 1)
-            ->setPaginationPageCount($pagination['pageCount'] ?? 1)
-            ->setSorting($sorting['field'], $sorting['type']);
-
-        $result = $this->getElements($this->componentParams->productId);
-        $result['pagination'] = $this->getPagination();
-
-        return $result;
+        return $this->creator->create($dto, $files);
     }
 }

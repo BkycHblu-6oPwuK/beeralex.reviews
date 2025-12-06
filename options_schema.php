@@ -10,33 +10,6 @@ return Schema::make()
         'Общие настройки',
         'Отзывы',
         function (SchemaTab $tab) {
-            $iblockOptions = ['' => 'Выберите инфоблок'];
 
-            $tab->select(
-                'reviews_iblock_id',
-                'Инфоблок',
-                $iblockOptions,
-                'Общие',
-                false,
-                ''
-            );
-
-            $tab->input(
-                'catalog_iblock_id',
-                'ID инфоблока каталога',
-                null,
-                null,
-                false,
-                0
-            );
-
-            $tab->input(
-                'offers_iblock_id',
-                'ID инфоблока предложений',
-                null,
-                null,
-                false,
-                0
-            );
         }
     );

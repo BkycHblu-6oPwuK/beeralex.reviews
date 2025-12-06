@@ -2,13 +2,13 @@
 
 namespace Beeralex\Reviews\Contracts;
 
-use Beeralex\Reviews\ComponentParams;
+use Beeralex\Reviews\Dto\ReviewDTO;
+use Bitrix\Main\Result;
 
 interface CreatorContract
 {
     /**
-     * @param array $form {eval: int, review: string, contact: string, user_name: string, offer: int, answer: string, active: bool}
      * @param array $files from $_FILES
      */
-    public function create(array $form, array $files, ComponentParams $params): int;
+    public function create(ReviewDTO $dto, array $files): Result;
 }
