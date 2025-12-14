@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/lib/Enum/DIServiceKey.php';
 
 use Beeralex\Core\Service\FileService;
 use Beeralex\Core\Service\SortingService;
