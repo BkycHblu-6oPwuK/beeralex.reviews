@@ -25,8 +25,8 @@ class ReviewDTO extends AbstractRequestDto
      * Оценка (от 1 до 5)
      */
     #[NotEmpty(errorMessage: 'Оценка обязательна')]
-    #[Min(value: 1, errorMessage: 'Минимальная оценка - 1')]
-    #[Max(value: 5, errorMessage: 'Максимальная оценка - 5')]
+    #[Min(min: 1, errorMessage: 'Минимальная оценка - 1')]
+    #[Max(max: 5, errorMessage: 'Максимальная оценка - 5')]
     public int $eval;
 
     /**
