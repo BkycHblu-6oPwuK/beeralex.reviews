@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Beeralex\Reviews\Repository;
 
-use Beeralex\Core\Repository\IblockRepository;
 use Beeralex\Core\Repository\Repository;
 use Beeralex\Core\Repository\SortingRepositoryContract;
 
