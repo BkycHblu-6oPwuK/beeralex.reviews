@@ -18,7 +18,8 @@
 - PHP 8.1+
 - Bitrix Framework 22.0+
 - Модуль `beeralex.core` (базовые абстракции)
-- Инфоблок с кодом `product_reviews` (есть миграция в ./migrations)
+- Модуль `beeralex.api` (для REST API)
+- Инфоблок с кодом `product_reviews`
 
 ## Установка
 
@@ -60,7 +61,6 @@ USER            (number)  - ID пользователя Bitrix
 FILES           (file)    - Фотографии (множественное)
 ```
 
-или воспользуйтесь миграцией
 ## Быстрый старт
 
 ### Создание отзыва
@@ -79,7 +79,7 @@ $dto->contactDetails = 'ivan@example.com';
 $dto->elementId = 123; // ID товара
 $dto->userId = $USER->GetID() ?: null;
 
-$result = $service->add($dto, $_FILES);
+$result = $service->add($dto, $_FILES['files']);
 
 if ($result->isSuccess()) {
     $elementId = $result->getData()['elementId'];
@@ -139,6 +139,67 @@ foreach ($reviews as $review) {
     echo "{$review['PROPERTY_USER_NAME_VALUE']}: ";
     echo str_repeat('⭐', $review['PROPERTY_EVAL_VALUE']);
     echo " - {$review['PROPERTY_REVIEW_VALUE']['TEXT']}\n";
+}
+```
+
+## REST API
+
+Модуль интегрирован с `beeralex.api` через `ReviewController`.
+
+### Получить список отзывов
+
+```javascript
+fetch('/api/v1/review/index/?product_id=123&count=10')
+  .then(res => res.json())
+  .then(data => console.log('Отзывы:', data));
+```
+
+### Создать отзыв
+
+```javascript
+const formData = new FormData();
+formData.append('userName', 'Иван Петров');
+formData.append('eval', 5);
+formData.append('review', 'Отличный товар!');
+formData.append('elementId', 123);
+formData.append('files[]', fileInput.files[0]);
+
+fetch('/api/v1/review/store/', {
+  method: 'POST',
+  body: formData
+})
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'success') {
+      console.log('Отзыв создан:', data.data.elementId);
+    } else {
+      console.error('Ошибки:', data.errors);
+    }
+  });
+```
+
+**Ответ (успех):**
+
+```json
+{
+  "status": "success",
+  "data": {
+    "elementId": 456
+  }
+}
+```
+
+**Ответ (ошибка):**
+
+```json
+{
+  "status": "error",
+  "errors": [
+    {
+      "message": "Имя должно быть от 2 до 100 символов",
+      "code": "review_create"
+    }
+  ]
 }
 ```
 
@@ -262,9 +323,137 @@ class ReviewCreatorService extends BaseCreator
 }
 ```
 
+### Уведомления через beeralex.notification
+
+```php
+namespace App\Reviews\Services;
+
+use Beeralex\Reviews\Services\ReviewCreatorService as BaseCreator;
+use Beeralex\Notification\NotificationManager;
+use Beeralex\Notification\Dto\NotificationMessage;
+
+class ReviewCreatorService extends BaseCreator
+{
+    public function create(ReviewDTO $dto, array $files): Result
+    {
+        $result = parent::create($dto, $files);
+
+        if ($result->isSuccess()) {
+            $this->notifyAdmin($dto, $result->getData()['elementId']);
+        }
+
+        return $result;
+    }
+
+    protected function notifyAdmin(ReviewDTO $dto, int $reviewId): void
+    {
+        $manager = new NotificationManager();
+
+        $message = new NotificationMessage(
+            eventName: 'NEW_REVIEW_MODERATION',
+            fields: [
+                'REVIEW_ID' => $reviewId,
+                'USER_NAME' => $dto->userName,
+                'RATING' => $dto->eval,
+                'PRODUCT_ID' => $dto->elementId,
+            ],
+            userId: 1 // Администратор
+        );
+
+        $manager->notify($message);
+    }
+}
+```
+
 ## Импорт отзывов (deprecated)
 
 ⚠️ **Устарело**. Рекомендуется использовать API-интеграцию вместо импорта.
+
+### Импорт из 2GIS
+
+```php
+use Beeralex\Reviews\Import\ImportFrom2Gis;
+
+$importer = new ImportFrom2Gis(
+    service: service(ReviewsService::class),
+    branches: ['70000001234567890'], // ID филиалов 2GIS
+    apiKey: 'your_2gis_api_key'
+);
+
+$importer->process();
+```
+
+## Примеры компонентов
+
+### Форма добавления отзыва
+
+```php
+class ReviewFormComponent extends CBitrixComponent
+{
+    public function executeComponent()
+    {
+        if ($this->request->isPost() && check_bitrix_sessid()) {
+            $this->handleSubmit();
+        }
+
+        $this->includeComponentTemplate();
+    }
+
+    protected function handleSubmit(): void
+    {
+        $dto = new ReviewDTO();
+        $dto->userName = $this->request->getPost('userName');
+        $dto->eval = (int)$this->request->getPost('eval');
+        $dto->review = $this->request->getPost('review');
+        $dto->elementId = (int)$this->arParams['PRODUCT_ID'];
+        $dto->userId = $GLOBALS['USER']->GetID() ?: null;
+
+        $result = service(ReviewsService::class)->add($dto, $_FILES['files']);
+
+        if ($result->isSuccess()) {
+            $this->arResult['SUCCESS'] = true;
+        } else {
+            $this->arResult['ERRORS'] = $result->getErrorMessages();
+        }
+    }
+}
+```
+
+### Список отзывов товара
+
+```php
+class ReviewListComponent extends CBitrixComponent
+{
+    public function executeComponent()
+    {
+        $repo = service(ReviewsRepository::class);
+
+        $this->arResult['REVIEWS'] = $repo->all(
+            filter: [
+                'IBLOCK_SECTION_ID' => $this->arParams['PRODUCT_ID'],
+                'ACTIVE' => 'Y'
+            ],
+            select: [
+                'ID', 'DATE_CREATE',
+                'PROPERTY_USER_NAME',
+                'PROPERTY_EVAL',
+                'PROPERTY_REVIEW',
+                'PROPERTY_FILES',
+            ],
+            order: ['ID' => 'DESC']
+        );
+
+        // Статистика
+        $evals = array_column($this->arResult['REVIEWS'], 'PROPERTY_EVAL_VALUE');
+        $this->arResult['AVERAGE_RATING'] = !empty($evals) 
+            ? round(array_sum($evals) / count($evals), 1) 
+            : 0;
+        $this->arResult['TOTAL_COUNT'] = count($this->arResult['REVIEWS']);
+
+        $this->includeComponentTemplate();
+    }
+}
+```
 
 ## Модерация
 
@@ -273,6 +462,11 @@ class ReviewCreatorService extends BaseCreator
 ### Автоматическая модерация через агент
 
 ```php
+// В /local/php_interface/init.php
+CAgent::AddAgent(
+    "\\App\\Agents\\ReviewModerationAgent::moderate();",
+    "", "N", 3600 // Каждый час
+);
 
 // Класс агента
 namespace App\Agents;
@@ -302,6 +496,7 @@ class ReviewModerationAgent
 ## Зависимости
 
 - `beeralex.core` — Repository, FileService, AbstractRequestDto
+- `beeralex.api` — ReviewController
 - Bitrix/Main — Result, Error, Validation
 - Bitrix/Iblock — работа с инфоблоками
 
