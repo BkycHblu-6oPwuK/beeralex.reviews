@@ -364,60 +364,6 @@ class ReviewCreatorService extends BaseCreator
 }
 ```
 
-## Импорт отзывов (deprecated)
-
-⚠️ **Устарело**. Рекомендуется использовать API-интеграцию вместо импорта.
-
-### Импорт из 2GIS
-
-```php
-use Beeralex\Reviews\Import\ImportFrom2Gis;
-
-$importer = new ImportFrom2Gis(
-    service: service(ReviewsService::class),
-    branches: ['70000001234567890'], // ID филиалов 2GIS
-    apiKey: 'your_2gis_api_key'
-);
-
-$importer->process();
-```
-
-## Примеры компонентов
-
-### Форма добавления отзыва
-
-```php
-class ReviewFormComponent extends CBitrixComponent
-{
-    public function executeComponent()
-    {
-        if ($this->request->isPost() && check_bitrix_sessid()) {
-            $this->handleSubmit();
-        }
-
-        $this->includeComponentTemplate();
-    }
-
-    protected function handleSubmit(): void
-    {
-        $dto = new ReviewDTO();
-        $dto->userName = $this->request->getPost('userName');
-        $dto->eval = (int)$this->request->getPost('eval');
-        $dto->review = $this->request->getPost('review');
-        $dto->elementId = (int)$this->arParams['PRODUCT_ID'];
-        $dto->userId = $GLOBALS['USER']->GetID() ?: null;
-
-        $result = service(ReviewsService::class)->add($dto, $_FILES['files']);
-
-        if ($result->isSuccess()) {
-            $this->arResult['SUCCESS'] = true;
-        } else {
-            $this->arResult['ERRORS'] = $result->getErrorMessages();
-        }
-    }
-}
-```
-
 ### Список отзывов товара
 
 ```php
@@ -495,7 +441,6 @@ class ReviewModerationAgent
 ## Зависимости
 
 - `beeralex.core` — Repository, FileService, AbstractRequestDto
-- `beeralex.api` — ReviewController
 - Bitrix/Main — Result, Error, Validation
 - Bitrix/Iblock — работа с инфоблоками
 
